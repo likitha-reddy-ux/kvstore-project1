@@ -1,4 +1,4 @@
-\# KV Store Project 1 Append-Only Key-Value Database
+\# KV Store Project 1 - The Simple Key-Value Store
 
 
 
@@ -121,6 +121,7 @@ Expected output:
 Likitha
 
 NULL
+
 
 
 
