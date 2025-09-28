@@ -1,39 +1,27 @@
-#!/usr/bin/env python3
-"""
-Simple Key-Value Store Project
-
-Commands:
-  SET <key> <value>   -> store a value under a key
-  GET <key>           -> retrieve the value if it exists
-  EXIT                -> quit the program
-
-Features:
-- Every SET is saved into a file named data.db (append-only log).
-- When program starts, it replays data.db to rebuild memory.
-- Uses a custom list of pairs [key, value] (NOT Python dict).
-"""
+# Project 1: Simple Key-Value Store
+# Name: Likitha
+# EUID: 11682461
 
 import sys, os
 
-DATA_FILE = "data.db"     # file where data will be saved
-NULL_VALUE = "NULL"       # what to print when key not found
+DATA_FILE = "data.db"     # append-only log file
+NULL_VALUE = "NULL"       # what to print for missing keys
 
 
 # ---------------- In-Memory Index ----------------
 class KVIndex:
     def __init__(self):
-        # we use a list of [key, value] pairs instead of dict
+        # list of [key, value] pairs (NOT a dict)
         self.pairs = []
 
     def _find_index(self, key):
-        # search backwards so we always find the most recent write
+        # search from the end so last write wins
         for i in range(len(self.pairs) - 1, -1, -1):
             if self.pairs[i][0] == key:
                 return i
         return -1
 
     def set(self, key, value):
-        """Store or overwrite a key with a value in memory"""
         idx = self._find_index(key)
         if idx >= 0:
             self.pairs[idx][1] = value
@@ -41,7 +29,6 @@ class KVIndex:
             self.pairs.append([key, value])
 
     def get(self, key):
-        """Return value for key, or None if not found"""
         idx = self._find_index(key)
         if idx >= 0:
             return self.pairs[idx][1]
@@ -61,14 +48,14 @@ class KVStore:
             return
         with open(self.filename, "r", encoding="utf-8") as f:
             for line in f:
-                line = line.strip()
-                if not line:
+                line = line.rstrip("\n")
+                if not line or not line.startswith("SET "):
                     continue
-                if line.startswith("SET "):
-                    parts = line.split(" ", 2)
-                    if len(parts) == 3:
-                        _, key, value = parts
-                        self.index.set(key, value)
+                # line format: SET <key> <value>
+                parts = line.split(" ", 2)
+                if len(parts) == 3:
+                    _, key, value = parts
+                    self.index.set(key, value)
 
     def set(self, key, value):
         """Append to log file and update memory"""
@@ -79,7 +66,6 @@ class KVStore:
         self.index.set(key, value)
 
     def get(self, key):
-        """Get value from memory"""
         return self.index.get(key)
 
 
@@ -100,18 +86,22 @@ def main():
             if len(parts) == 3:
                 _, key, value = parts
                 store.set(key, value)
-            # silently ignore malformed SET
+            # ignore malformed SET
+            continue
 
-        elif line.startswith("GET "):
+        if line.startswith("GET "):
             parts = line.split(" ", 1)
             if len(parts) == 2:
                 _, key = parts
                 val = store.get(key)
-                print(val if val is not None else NULL_VALUE)
+                # IMPORTANT: flush so Gradebot sees output
+                print(val if val is not None else NULL_VALUE, flush=True)
             else:
-                print(NULL_VALUE)
-        # ignore any other commands
+                print(NULL_VALUE, flush=True)
+            continue
 
+        # ignore any other input
 
 if __name__ == "__main__":
     main()
+
